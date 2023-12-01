@@ -14,10 +14,8 @@ fn solution_1(input: &[String]) -> u32 {
     input
         .iter()
         .map(|line| {
-            let first_digit = line.chars().filter(|c| c.is_ascii_digit()).next().unwrap();
-            let last_digit = line.chars().filter(|c| c.is_ascii_digit()).last().unwrap();
-            let num_string: String = [first_digit, last_digit].iter().collect();
-            num_string.parse::<u32>().unwrap()
+            let line_digits: Vec<u32> = line.chars().filter_map(|c| c.to_digit(10)).collect();
+            line_digits.first().unwrap() * 10 + line_digits.last().unwrap()
         })
         .sum()
 }
