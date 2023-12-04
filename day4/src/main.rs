@@ -16,14 +16,27 @@ fn main() {
 struct ScratchCard {
     wining_numbers: Vec<u32>,
     card_numbers: Vec<u32>,
+    card_total: usize,
 }
 
 impl ScratchCard {
-    pub fn card_total_winning_numbers(&self) -> usize {
-        self.card_numbers
+    pub fn new(wining_numbers: Vec<u32>, card_numbers: Vec<u32>) -> Self {
+        Self {
+            card_total: Self::calculate_card_total(&wining_numbers, &card_numbers),
+            wining_numbers,
+            card_numbers,
+        }
+    }
+
+    fn calculate_card_total(wining_numbers: &[u32], card_numbers: &[u32]) -> usize {
+        card_numbers
             .iter()
-            .filter(|card_number| self.wining_numbers.contains(card_number))
+            .filter(|card_number| wining_numbers.contains(card_number))
             .count()
+    }
+
+    pub fn card_total_winning_numbers(&self) -> usize {
+        self.card_total
     }
 }
 
@@ -40,10 +53,10 @@ fn parse_input(input: impl BufRead) -> Vec<Rc<ScratchCard>> {
                     .map(|num| num.parse::<u32>().unwrap())
                     .collect()
             };
-            Rc::new(ScratchCard {
-                wining_numbers: parse_numbers(winning_numbers),
-                card_numbers: parse_numbers(card_numbers),
-            })
+            Rc::new(ScratchCard::new(
+                parse_numbers(winning_numbers),
+                parse_numbers(card_numbers),
+            ))
         })
         .collect()
 }
@@ -90,13 +103,8 @@ mod tests {
     #[test]
     fn test_parse_input_example() {
         let cards = parse_input(EXAMPLE.as_bytes());
-        assert_eq!(
-            cards[0],
-            Rc::new(ScratchCard {
-                wining_numbers: vec![41, 48, 83, 86, 17],
-                card_numbers: vec![83, 86, 6, 31, 17, 9, 48, 53]
-            })
-        );
+        assert_eq!(&cards[0].wining_numbers, &[41, 48, 83, 86, 17]);
+        assert_eq!(&cards[0].card_numbers, &[83, 86, 6, 31, 17, 9, 48, 53]);
     }
 
     #[test]
