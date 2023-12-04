@@ -1,10 +1,15 @@
-use std::io::{stdin, BufRead};
+use std::{
+    collections::VecDeque,
+    io::{stdin, BufRead},
+    rc::Rc,
+};
 
 use regex::Regex;
 
 fn main() {
     let cards = parse_input(stdin().lock());
     println!("part 1: {}", part_1(&cards));
+    println!("part 2: {}", part_2(&cards));
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -12,17 +17,17 @@ struct ScratchCard {
     wining_numbers: Vec<u32>,
     card_numbers: Vec<u32>,
 }
+
 impl ScratchCard {
-    pub fn card_winning_numbers(&self) -> Vec<u32> {
+    pub fn card_total_winning_numbers(&self) -> usize {
         self.card_numbers
             .iter()
             .filter(|card_number| self.wining_numbers.contains(card_number))
-            .map(|card_number| *card_number)
-            .collect()
+            .count()
     }
 }
 
-fn parse_input(input: impl BufRead) -> Vec<ScratchCard> {
+fn parse_input(input: impl BufRead) -> Vec<Rc<ScratchCard>> {
     let ws = Regex::new(r"\s+").unwrap();
     input
         .lines()
@@ -35,18 +40,18 @@ fn parse_input(input: impl BufRead) -> Vec<ScratchCard> {
                     .map(|num| num.parse::<u32>().unwrap())
                     .collect()
             };
-            ScratchCard {
+            Rc::new(ScratchCard {
                 wining_numbers: parse_numbers(winning_numbers),
                 card_numbers: parse_numbers(card_numbers),
-            }
+            })
         })
         .collect()
 }
 
-fn part_1(scratch_cards: &[ScratchCard]) -> u64 {
+fn part_1(scratch_cards: &[Rc<ScratchCard>]) -> u64 {
     scratch_cards
         .iter()
-        .map(|card| card.card_winning_numbers().len())
+        .map(|card| card.card_total_winning_numbers())
         .map(
             |card_total_wining_numbers| match card_total_wining_numbers {
                 0 => 0,
@@ -54,6 +59,28 @@ fn part_1(scratch_cards: &[ScratchCard]) -> u64 {
             },
         )
         .sum()
+}
+
+fn part_2(scratch_cards: &[Rc<ScratchCard>]) -> usize {
+    let mut copies: VecDeque<Vec<Rc<ScratchCard>>> = scratch_cards
+        .iter()
+        .cloned()
+        .map(|card| vec![card])
+        .collect();
+    let mut total = 0;
+    for i in 0..scratch_cards.len() {
+        let current_copies = copies
+            .pop_front()
+            .expect("copies should be same len as scratch_cards");
+        for card in current_copies {
+            total += 1;
+            let n = card.card_total_winning_numbers();
+            for j in 0..n {
+                copies[j].push(scratch_cards[i + j + 1].clone());
+            }
+        }
+    }
+    total
 }
 
 #[cfg(test)]
@@ -65,10 +92,10 @@ mod tests {
         let cards = parse_input(EXAMPLE.as_bytes());
         assert_eq!(
             cards[0],
-            ScratchCard {
+            Rc::new(ScratchCard {
                 wining_numbers: vec![41, 48, 83, 86, 17],
                 card_numbers: vec![83, 86, 6, 31, 17, 9, 48, 53]
-            }
+            })
         );
     }
 
@@ -76,5 +103,11 @@ mod tests {
     fn test_part_1_example() {
         let cards = parse_input(EXAMPLE.as_bytes());
         assert_eq!(part_1(&cards), 13);
+    }
+
+    #[test]
+    fn test_part_2_example() {
+        let cards = parse_input(EXAMPLE.as_bytes());
+        assert_eq!(part_2(&cards), 30);
     }
 }
