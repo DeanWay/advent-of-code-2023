@@ -1,10 +1,14 @@
-use std::io::{stdin, BufRead};
+use std::{
+    collections::HashMap,
+    io::{stdin, BufRead},
+};
 mod schematic;
-use schematic::{Cell, EntityValue, Schematic};
+use schematic::{Cell, Entity, EntityValue, Schematic};
 
 fn main() {
     let schematic = parse_input(stdin().lock());
     println!("part 1: {}", part_1(&schematic));
+    println!("part 2: {}", part_2(&schematic));
 }
 
 fn parse_input(input: impl BufRead) -> Schematic {
@@ -43,6 +47,32 @@ fn part_1(schematic: &Schematic) -> u64 {
                 })
         })
         .map(|(_, num)| num)
+        .sum()
+}
+
+fn part_2(schematic: &Schematic) -> u64 {
+    schematic
+        .get_entities()
+        .values()
+        .filter(|entity| match &entity.value {
+            EntityValue::Symbol('*') => true,
+            _ => false,
+        })
+        .map(|star| {
+            schematic
+                .get_entity_positions(&star.id)
+                .flat_map(|pos| pos.adjacent())
+                .filter_map(|pos| match schematic.get_entity_at_position(&pos) {
+                    Some(Entity {
+                        id,
+                        value: EntityValue::Number(num),
+                    }) => Some((id, *num)),
+                    _ => None,
+                })
+                .collect::<HashMap<_, _>>()
+        })
+        .filter(|nums| nums.len() == 2)
+        .map(|nums| nums.values().product::<u64>())
         .sum()
 }
 
@@ -99,5 +129,11 @@ mod tests {
     fn test_part_1_example() {
         let schematic = parse_input(EXAMPLE.as_bytes());
         assert_eq!(part_1(&schematic), 4361);
+    }
+
+    #[test]
+    fn test_part_2_example() {
+        let schematic = parse_input(EXAMPLE.as_bytes());
+        assert_eq!(part_2(&schematic), 467835);
     }
 }
