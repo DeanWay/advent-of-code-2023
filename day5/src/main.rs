@@ -8,6 +8,7 @@ use std::{
 fn main() {
     let almanac = parse_input(stdin().lock());
     println!("part 1: {}", part_1(&almanac));
+    println!("part 2: {}", part_2(&almanac));
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -96,6 +97,17 @@ fn part_1(almanac: &Almanac) -> u64 {
         .unwrap()
 }
 
+fn part_2(almanac: &Almanac) -> u64 {
+    let seed_numbers = almanac
+        .seeds
+        .chunks(2)
+        .flat_map(|chunk| chunk[0]..chunk[0] + (chunk[1]));
+    seed_numbers
+        .map(|seed_number| seed_to_location(almanac, seed_number))
+        .min()
+        .unwrap()
+}
+
 fn seed_to_location(almanac: &Almanac, seed_number: u64) -> u64 {
     let mut current_type: &str = "seed";
     let mut current_value: u64 = seed_number;
@@ -149,5 +161,11 @@ mod tests {
     fn test_part_1_example() {
         let almanac = parse_input(EXAMPLE.as_bytes());
         assert_eq!(part_1(&almanac), 35);
+    }
+
+    #[test]
+    fn test_part_2_example() {
+        let almanac = parse_input(EXAMPLE.as_bytes());
+        assert_eq!(part_2(&almanac), 46);
     }
 }
